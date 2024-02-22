@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML Comparison</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2; /* Set background color to match Gmail sign-in page */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .form-container {
+            background-color: #fff; /* Set background color to white */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+            min-height: 500px; /* Adjust the height as needed */
+        }
+
+        .form-container h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .input-container {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Align inputs to center */
+        }
+
+        .input-container label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .input-container input[type="text"] {
+            width: calc(100% - 140px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #generate-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 0; /* Adjust button padding */
+            width: 100%; /* Set button width to 100% */
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        #generate-btn:hover {
+            background-color: #45a049;
+        }
+
+        #output-msg {
+            margin-top: 20px;
+            color: green;
+            font-weight: bold;
+        }
+
+        .blink {
+            animation: blink 1s linear infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>XML Comparison</h1>
+        <br>
+        <form id="pdf-form">
+            <div class="input-container">
+                <label for="xml1_path">XML 1 Path:</label>
+                <input type="text" id="xml1_path" name="xml1_path" placeholder="Enter XML 1 path" required>
+            </div>
+            <br>
+
+            <div class="input-container">
+                <label for="xml2_path">XML 2 Path:</label>
+                <input type="text" id="xml2_path" name="xml2_path" placeholder="Enter XML 2 path" required>
+            </div>
+            <br>
+            <br>
+            <br>
+
+            <button type="submit" id="generate-btn">Download PDF</button>
+        </form>
+        <div id="output-msg"></div>
+    </div>
+
+    <script>
+        document.getElementById('pdf-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var form = this;
+            var xml1Path = document.getElementById('xml1_path').value;
+            var xml2Path = document.getElementById('xml2_path').value;
+
+            if (!xml1Path || !xml2Path) {
+                alert('Please enter both XML paths.');
+                return;
+            }
+
+            var xml1Filename = xml1Path.split('\\').pop().split('/').pop();
+            var xml2Filename = xml2Path.split('\\').pop().split('/').pop();
+
+            var formData = new FormData();
+            formData.append('xml1_path', xml1Path);
+            formData.append('xml2_path', xml2Path);
+
+            fetch('/generate_pdf', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    var outputMsg = document.getElementById('output-msg');
+                    outputMsg.innerText = "Comparison PDF generated successfully!";
+                    outputMsg.classList.add('blink');
+
+                    // Remove the blink class after 3 seconds and clear the message
+                    setTimeout(function() {
+                        outputMsg.classList.remove('blink');
+                        outputMsg.innerText = "";
+                    }, 3000);
+
+                    // Trigger PDF download with custom header
+                    window.location.href = '/download_pdf?xml1=' + xml1Filename + '&xml2=' + xml2Filename;
+                } else {
+                    document.getElementById('output-msg').innerText = "Failed to generate PDF: " + data.message;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('output-msg').innerText = "An error occurred while generating the PDF.";
+            });
+        });
+    </script>
+</body>
+</html>
